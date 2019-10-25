@@ -3,12 +3,33 @@ import { startOfHour, parseISO, isBefore, format } from "date-fns";
 import pt from "date-fns/locale/pt";
 import Appointment from "../models/Appointment";
 import User from "../models/User";
+import File from "../models/File";
 import Notification from "../schemas/Notification";
 
 class AppointmentController {
   async index(req, res) {
+    const { page } = req.query;
+
     const appointments = await Appointment.findAll({
-      where: { user_id: req.userId, canceled_at: null }
+      where: { user_id: req.userId, canceled_at: null },
+      order: ["date"],
+      attributes: ["id", "date"],
+      limit: 20,
+      offset: (page - 1) * 20,
+      include: [
+        {
+          model: User,
+          as: "provider",
+          attributes: ["id", "name"],
+          include: [
+            {
+              model: File,
+              as: "avatar",
+              attributes: ["id", "path", "url"]
+            }
+          ]
+        }
+      ]
     });
 
     return res.json(appointments);
